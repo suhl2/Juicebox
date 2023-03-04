@@ -1,9 +1,12 @@
-const { client, getAllUsers, createUser, updateUser } = require('./index');
+const { client, getAllUsers, createUser, updateUser, createPost, updatePost, getAllPosts, getPostsByUser,
+    getUserById, } = require('./index');
 
 const dropTables = async () => {
     try {
         console.log("Start drop tables");
-        await client.query(`DROP TABLE IF EXISTS users;`);
+        await client.query(`
+        DROP TABLE IF EXISTS posts;
+        DROP TABLE IF EXISTS users;`);
         console.log("Tables dropped");
     } catch(err) {
         console.error("Error dropping tables");
@@ -21,7 +24,14 @@ const createTables = async () => {
             name VARCHAR(255) NOT NULL,
             location VARCHAR(255) NOT NULL,
             active BOOLEAN DEFAULT true
-          );`);
+          );
+          CREATE TABLE posts (
+            id SERIAL PRIMARY KEY,
+            "authorId" INTEGER REFERENCES users(id) NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            active BOOLEAN DEFAULT true
+          )`);
           console.log("Tables built");
     } catch(err) {
         console.error("Error building tables");
@@ -43,6 +53,22 @@ const createInitialUsers = async () => {
     }
 }
 
+const createInitialPosts = async () => {
+    try{
+        const [albert, sandra, glamgal] = await getAllUsers();
+        console.log("Start creating posts");
+        await createPost({authorId: albert.id, title: 'WOW Hey I found a shiny rock', content: 'Wow this rock is so shiny you guys.' });
+        await createPost({authorId: albert.id, title: 'More shiny rocks', content: 'Holy crap, I think this rock is even shinier than the first one!'});
+        await createPost({authorId: sandra.id, title: "Hi, I'm Sandra", content: 'But you can call me Sandy'});
+        await createPost({authorId: glamgal.id, title: "I love Goop!", content: "Have you tried Goop?  It's so awesome!"});
+        console.log("Finished creating posts");
+
+    } catch(err) {
+        console.error("Error creating initial posts");
+        throw err;
+    }
+}
+
 const rebuildDB = async () => {
     try {
         client.connect();
@@ -50,6 +76,8 @@ const rebuildDB = async () => {
         await dropTables();
         await createTables();
         await createInitialUsers();
+        await createInitialPosts();
+        
 
     } catch(err) {
         throw err;
@@ -59,7 +87,7 @@ const rebuildDB = async () => {
 const testDB = async () => {
     try {
         console.log("Begin DB test");
-        console.log("Calling getAllUsers")
+        console.log("Calling getAllUsers");
         const users = await getAllUsers();
         console.log("Result:", users);
     
@@ -69,6 +97,25 @@ const testDB = async () => {
           location: "Lesterville, KY"
         });
         console.log("Result:", updateUserResult);
+
+        console.log("Calling getAllPosts");
+        const posts = await getAllPosts();
+        console.log("Posts: ", posts);
+        
+        // console.log("Calling updatePost on posts[0]");
+        // const updatePostResult = await updatePost(posts[0].id, {
+        //   title: "New Title",
+        //   content: "Updated Content"
+        // });
+        // console.log("Result:", updatePostResult);
+
+        console.log("Getting posts by Albert");
+        const albertPosts = await getPostsByUser(1);
+        console.log("Posts by Albert:", albertPosts);
+
+        console.log("Getting Albert and all his posts");
+        const userAndPosts = await getUserById(1);
+        console.log(userAndPosts);
     
         console.log("Finished database tests!");
       } catch (error) {
