@@ -1,10 +1,12 @@
 const { client, getAllUsers, createUser, updateUser, createPost, updatePost, getAllPosts, getPostsByUser,
-    getUserById, } = require('./index');
+    getUserById, createTags, addTagsToPost, } = require('./index');
 
 const dropTables = async () => {
     try {
         console.log("Start drop tables");
         await client.query(`
+        DROP TABLE IF EXISTS post_tags;
+        DROP TABLE IF EXISTS tags;
         DROP TABLE IF EXISTS posts;
         DROP TABLE IF EXISTS users;`);
         console.log("Tables dropped");
@@ -31,7 +33,17 @@ const createTables = async () => {
             title VARCHAR(255) NOT NULL,
             content TEXT NOT NULL,
             active BOOLEAN DEFAULT true
-          )`);
+          );
+          CREATE TABLE tags (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) UNIQUE NOT NULL
+          );
+          CREATE TABLE post_tags (
+            "postId" INTEGER REFERENCES posts(id),
+            "tagId" INTEGER REFERENCES tags(id),
+            UNIQUE ("postId", "tagId")
+          );
+          `);
           console.log("Tables built");
     } catch(err) {
         console.error("Error building tables");
@@ -69,6 +81,30 @@ const createInitialPosts = async () => {
     }
 }
 
+async function createInitialTags() {
+    try {
+      console.log("Starting to create tags...");
+  
+      const [happy, sad, inspo, catman] = await createTags([
+        '#happy', 
+        '#worst-day-ever', 
+        '#youcandoanything',
+        '#catmandoeverything'
+      ]);
+  
+      const [postOne, postTwo, postThree] = await getAllPosts();
+  
+      await addTagsToPost(postOne.id, [happy, inspo]);
+      await addTagsToPost(postTwo.id, [sad, inspo]);
+      await addTagsToPost(postThree.id, [happy, catman, inspo]);
+  
+      console.log("Finished creating tags!");
+    } catch (error) {
+      console.log("Error creating tags!");
+      throw error;
+    }
+  }
+
 const rebuildDB = async () => {
     try {
         client.connect();
@@ -77,6 +113,7 @@ const rebuildDB = async () => {
         await createTables();
         await createInitialUsers();
         await createInitialPosts();
+        await createInitialTags();
         
 
     } catch(err) {
@@ -116,6 +153,10 @@ const testDB = async () => {
         console.log("Getting Albert and all his posts");
         const userAndPosts = await getUserById(1);
         console.log(userAndPosts);
+
+        // console.log("Getting all tags");
+        // const allTags = await testCreateTags();
+        // console.log(allTags);
     
         console.log("Finished database tests!");
       } catch (error) {
