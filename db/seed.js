@@ -102,12 +102,12 @@ const testDB = async () => {
         const posts = await getAllPosts();
         console.log("Posts: ", posts);
         
-        // console.log("Calling updatePost on posts[0]");
-        // const updatePostResult = await updatePost(posts[0].id, {
-        //   title: "New Title",
-        //   content: "Updated Content"
-        // });
-        // console.log("Result:", updatePostResult);
+        console.log("Calling updatePost on posts[0]");
+        const updatePostResult = await updatePost(posts[0].authorId, {
+          title: "New Title",
+          content: "Updated Content"
+        });
+        console.log("Result:", updatePostResult);
 
         console.log("Getting posts by Albert");
         const albertPosts = await getPostsByUser(1);
