@@ -246,7 +246,7 @@ const getPostById = async (postId) => {
       SELECT id, username, name, location
       FROM users
       WHERE id=$1;
-    `, [postId])
+    `, [post.authorId])
 
     post.tags = tags;
     post.author = author;
@@ -321,5 +321,6 @@ const getUserByUsername = async (username) => {
     getAllTags,
     createPostTag,
     addTagsToPost,
-    getUserByUsername
+    getUserByUsername,
+    getPostById
   }
